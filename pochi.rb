@@ -1,9 +1,9 @@
-#!/bin/env ruby
+#!/usr/bin/env ruby
 
 require 'optparse'
 require 'date'
-require 'ferrum'
 require 'yaml'
+require 'ferrum'
 
 def wait_url(driver, url)
   100.times do
@@ -76,7 +76,9 @@ def stamp(driver, worktype:, datetime:, is_stamp: false)
 
   # stamp!
   if is_stamp
+    date_str = datetime.strftime("%Y-%m-%d %H:%M")
     puts 'stamp!'
+    puts date_str
     element = driver.at_css('[id=insert_button]')
     element.click
     sleep 0.5
@@ -101,6 +103,8 @@ end
 browser = Ferrum::Browser.new
 browser.resize(width: 1000, height: 1300)
 login(browser)
-browser.screenshot(path: "screenshot.png")
+browser.screenshot(path: 'screenshot.png')
 stamp(browser, worktype: arg_hash[:type], datetime: arg_hash[:datetime], is_stamp: true)
-browser.screenshot(path: "screenshot.png")
+browser.screenshot(path: 'screenshot.png')
+
+#hoge
