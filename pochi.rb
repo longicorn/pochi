@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-require 'optparse'
-require 'date'
 require 'yaml'
 require 'ferrum'
 
@@ -42,69 +40,23 @@ def login(driver)
   raise if driver.current_url == login_url
 end
 
-def stamp(driver, worktype:, datetime:, is_stamp: false)
-  elements = driver.at_css('[id=sidemenu]').css('a')
-  element = elements.detect{|e|e.text == '打刻修正'}
-  element.click
-  wait_url(driver, "#{BASE_URL}/employee/adit/modify/")
-
-  # set date
-  if datetime.to_date != Date.today
-    elements = driver.at_css('[id=search-box]').css('select')
-    element = elements.detect{|e|e.attribute('name')=='year'}
-    element.select(datetime.year.to_s)
-    element = elements.detect{|e|e.attribute('name')=='month'}
-    element.select(datetime.month.to_s)
-    element = elements.detect{|e|e.attribute('name')=='day'}
-    element.select(datetime.day.to_s)
-
-    elements = driver.at_css('[id=search-box]').css('a')
-    element = elements.detect{|e|e.text == '表示'}
-    element.click
-    sleep 0.5
+def stamp(driver, type)
+  case type
+  when :start
+    node = driver.at_css('button#adit-button-work-start')
+  when :finish
+    node =  driver.at_css('button#adit-button-work-end')
   end
-
-  # set work type
-  element = driver.at_css('[id=adit_item_change]').at_css('select')
-  type_option = {start: 'work_start', finish: 'work_end'}[worktype.to_sym]
-  element.select(type_option)
-
-  # set work time
-  element = driver.at_css('[id=ter_time]')
-  element.focus.type(datetime.strftime("%H:%M"))
-  sleep 0.5
-
-  # stamp!
-  if is_stamp
-    date_str = datetime.strftime("%Y-%m-%d %H:%M")
-    puts 'stamp!'
-    puts date_str
-    element = driver.at_css('[id=insert_button]')
-    element.click
-    sleep 0.5
-  end
+  raise if node.nil?
+  node.focus.click
 end
 
-arg_hash = {datetime: DateTime.now}
-params = ARGV.getopts('t:d:', 'type:', 'datetitme:')
-params.each_key do |key|
-  next unless params[key]
-
-  case key
-  when 't', 'type'
-    type = {start: :start, s: :start, finish: :finish, f: :finish}[params[key].to_sym]
-    arg_hash[:type] = type
-  when 'd', 'datetime'
-    arg_hash[:datetime] = DateTime.parse(params[key])
-    raise if Date.today < arg_hash[:datetime].to_date
-  end
-end
+option = ARGV.shift
+type = {s: :start, f: :finish}[option.sub(/^-/, '').to_sym]
 
 browser = Ferrum::Browser.new
 browser.resize(width: 1000, height: 1300)
 login(browser)
+stamp(browser, type)
+sleep 1
 browser.screenshot(path: 'screenshot.png')
-stamp(browser, worktype: arg_hash[:type], datetime: arg_hash[:datetime], is_stamp: true)
-browser.screenshot(path: 'screenshot.png')
-
-#hoge
